@@ -1,0 +1,1954 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Garahe.ph - Smart Parking Finder</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Leaflet CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <style>
+      :root {
+        --electric-blue: #0052cc;
+        --electric-blue-dark: #003d99;
+        --electric-blue-light: #0065ff;
+        --traffic-green: #36b37e;
+        --alert-red: #de350b;
+        --soft-gray: #f4f5f7;
+        --medium-gray: #dfe1e6;
+        --text-dark: #172b4d;
+        --text-light: #5e6c84;
+        --white: #ffffff;
+        --accent-yellow: #ffab00;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background: var(--white);
+        color: var(--text-dark);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+
+      body.desktop-view {
+        max-width: 100%;
+      }
+
+      /* Animated Background Pattern */
+      .bg-accent {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        opacity: 0.02;
+        background-image: repeating-linear-gradient(
+          45deg,
+          transparent,
+          transparent 35px,
+          var(--electric-blue) 35px,
+          var(--electric-blue) 70px
+        );
+        animation: slidePattern 20s linear infinite;
+        pointer-events: none;
+      }
+
+      @keyframes slidePattern {
+        0% {
+          transform: translate(0, 0);
+        }
+        100% {
+          transform: translate(70px, 70px);
+        }
+      }
+
+      /* View Toggle Button */
+      .view-toggle {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 1000;
+        background: linear-gradient(
+          135deg,
+          var(--electric-blue) 0%,
+          var(--electric-blue-light) 100%
+        );
+        color: white;
+        border: none;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(0, 82, 204, 0.4);
+        transition: all 0.3s;
+      }
+
+      .view-toggle:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 28px rgba(0, 82, 204, 0.5);
+      }
+
+      .view-toggle:active {
+        transform: scale(0.95);
+      }
+
+      /* Navigation */
+      .navbar {
+        position: sticky;
+        top: 0;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+        padding: 1rem 1.5rem;
+        box-shadow: 0 2px 12px rgba(0, 82, 204, 0.08);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 100;
+        animation: slideDown 0.5s ease-out;
+      }
+
+      @keyframes slideDown {
+        from {
+          transform: translateY(-100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .logo-img {
+        height: 40px;
+        width: auto;
+        object-fit: contain;
+      }
+
+      .logo {
+        font-size: 1.5rem;
+        font-weight: 800;
+        background: linear-gradient(
+          135deg,
+          var(--electric-blue) 0%,
+          var(--electric-blue-light) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -0.5px;
+        position: relative;
+      }
+
+      .hamburger {
+        width: 28px;
+        height: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .hamburger:hover span {
+        background: var(--electric-blue);
+      }
+
+      .hamburger span {
+        width: 100%;
+        height: 3px;
+        background: var(--text-dark);
+        border-radius: 2px;
+        transition: all 0.3s;
+      }
+
+      /* Back Button */
+      .back-button {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-dark);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .back-button:hover {
+        color: var(--electric-blue);
+        transform: translateX(-3px);
+      }
+
+      .back-arrow {
+        font-size: 1.5rem;
+      }
+
+      /* Container for responsive layout */
+      .app-container {
+        transition: max-width 0.3s ease;
+      }
+
+      body.desktop-view .app-container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      /* Hero Section */
+      .hero {
+        padding: 2.5rem 1.5rem 2rem;
+        position: relative;
+        z-index: 1;
+      }
+
+      body.desktop-view .hero {
+        padding: 4rem 3rem 3rem;
+      }
+
+      .hero h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+        animation: fadeInUp 0.6s ease-out;
+      }
+
+      body.desktop-view .hero h1 {
+        font-size: 3.5rem;
+      }
+
+      .hero-subtitle {
+        color: var(--text-light);
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+        animation: fadeInUp 0.6s ease-out 0.1s both;
+      }
+
+      body.desktop-view .hero-subtitle {
+        font-size: 1.25rem;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .search-container {
+        position: relative;
+        margin-bottom: 2rem;
+        animation: fadeInUp 0.6s ease-out 0.2s both;
+      }
+
+      body.desktop-view .search-container {
+        max-width: 600px;
+      }
+
+      .search-bar {
+        width: 100%;
+        padding: 1rem 1rem 1rem 3rem;
+        border: 2px solid var(--medium-gray);
+        border-radius: 50px;
+        font-size: 1rem;
+        font-family: "Poppins", sans-serif;
+        transition: all 0.3s;
+        background: var(--white);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
+
+      .search-bar:focus {
+        outline: none;
+        border-color: var(--electric-blue);
+        box-shadow: 0 4px 20px rgba(0, 82, 204, 0.2);
+        transform: translateY(-2px);
+      }
+
+      .search-icon {
+        position: absolute;
+        left: 1.2rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-light);
+        font-size: 1.2rem;
+      }
+
+      /* Stats Bar */
+      .stats-bar {
+        background: linear-gradient(
+          135deg,
+          var(--electric-blue) 0%,
+          var(--electric-blue-light) 100%
+        );
+        padding: 1.5rem 1.5rem;
+        margin: 0 1.5rem 2rem;
+        border-radius: 20px;
+        box-shadow: 0 8px 24px rgba(0, 82, 204, 0.25);
+        animation: fadeInUp 0.6s ease-out 0.3s both;
+        position: relative;
+        overflow: hidden;
+      }
+
+      body.desktop-view .stats-bar {
+        margin: 0 3rem 3rem;
+        padding: 2rem;
+      }
+
+      .stats-bar::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(
+          circle,
+          rgba(255, 255, 255, 0.1) 0%,
+          transparent 70%
+        );
+        animation: rotate 15s linear infinite;
+      }
+
+      @keyframes rotate {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        position: relative;
+        z-index: 1;
+      }
+
+      body.desktop-view .stats-grid {
+        gap: 3rem;
+      }
+
+      .stat-item {
+        text-align: center;
+      }
+
+      .stat-number {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--white);
+        line-height: 1;
+        margin-bottom: 0.25rem;
+      }
+
+      body.desktop-view .stat-number {
+        font-size: 3rem;
+      }
+
+      .stat-label {
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 500;
+      }
+
+      body.desktop-view .stat-label {
+        font-size: 1rem;
+      }
+
+      /* Section Headers */
+      .section-header {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-light);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 1rem;
+        padding: 0 1.5rem;
+      }
+
+      body.desktop-view .section-header {
+        padding: 0 3rem;
+        font-size: 1rem;
+      }
+
+      /* Destination Cards */
+      .destinations-list {
+        padding: 0 1.5rem 2rem;
+        position: relative;
+        z-index: 1;
+      }
+
+      body.desktop-view .destinations-list {
+        padding: 0 3rem 3rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .destination-card {
+        background: var(--white);
+        border-radius: 16px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: cardSlideIn 0.5s ease-out both;
+        position: relative;
+        overflow: hidden;
+      }
+
+      body.desktop-view .destination-card {
+        margin-bottom: 0;
+        padding: 1.75rem;
+      }
+
+      .destination-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          135deg,
+          var(--electric-blue) 0%,
+          var(--electric-blue-light) 100%
+        );
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      .destination-card:nth-child(1) {
+        animation-delay: 0.1s;
+      }
+      .destination-card:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+      .destination-card:nth-child(3) {
+        animation-delay: 0.2s;
+      }
+      .destination-card:nth-child(4) {
+        animation-delay: 0.25s;
+      }
+      .destination-card:nth-child(5) {
+        animation-delay: 0.3s;
+      }
+      .destination-card:nth-child(6) {
+        animation-delay: 0.35s;
+      }
+
+      @keyframes cardSlideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .destination-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(0, 82, 204, 0.2);
+      }
+
+      .destination-card:hover::before {
+        opacity: 0.05;
+      }
+
+      .destination-card:active {
+        transform: translateY(-2px);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+        position: relative;
+        z-index: 1;
+      }
+
+      .card-title {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 0.25rem;
+      }
+
+      .card-location {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        color: var(--text-light);
+        font-size: 0.875rem;
+      }
+
+      .location-pin {
+        font-size: 0.875rem;
+      }
+
+      .card-info {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.8rem;
+        color: var(--text-light);
+        position: relative;
+        z-index: 1;
+      }
+
+      .info-item {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+
+      .status-badge {
+        padding: 0.375rem 0.875rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+      }
+
+      .status-badge.available {
+        background: rgba(54, 179, 126, 0.15);
+        color: var(--traffic-green);
+      }
+
+      .status-badge.full {
+        background: rgba(222, 53, 11, 0.15);
+        color: var(--alert-red);
+      }
+
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      .status-dot.green {
+        background: var(--traffic-green);
+        box-shadow: 0 0 8px var(--traffic-green);
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.7;
+          transform: scale(1.2);
+        }
+      }
+
+      /* Features Section */
+      .features-section {
+        padding: 3rem 1.5rem;
+        background: var(--soft-gray);
+        position: relative;
+        z-index: 1;
+      }
+
+      body.desktop-view .features-section {
+        padding: 5rem 3rem;
+      }
+
+      .features-header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      body.desktop-view .features-header {
+        margin-bottom: 3rem;
+      }
+
+      .features-header h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+      }
+
+      body.desktop-view .features-header h2 {
+        font-size: 3rem;
+      }
+
+      .features-header p {
+        color: var(--text-light);
+      }
+
+      body.desktop-view .features-header p {
+        font-size: 1.25rem;
+      }
+
+      .features-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+
+      body.desktop-view .features-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+      }
+
+      .feature-item {
+        background: var(--white);
+        padding: 1.25rem;
+        border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s;
+      }
+
+      body.desktop-view .feature-item {
+        padding: 2rem;
+      }
+
+      .feature-item:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0, 82, 204, 0.15);
+      }
+
+      .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.75rem;
+        display: block;
+      }
+
+      body.desktop-view .feature-icon {
+        font-size: 3.5rem;
+      }
+
+      .feature-item h3 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+      }
+
+      body.desktop-view .feature-item h3 {
+        font-size: 1.25rem;
+      }
+
+      .feature-item p {
+        font-size: 0.75rem;
+        color: var(--text-light);
+        line-height: 1.4;
+      }
+
+      body.desktop-view .feature-item p {
+        font-size: 1rem;
+      }
+
+      /* Dashboard View */
+      .dashboard {
+        padding: 2rem 1.5rem;
+        position: relative;
+        z-index: 1;
+      }
+
+      body.desktop-view .dashboard {
+        padding: 3rem;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .dashboard-header {
+        margin-bottom: 2rem;
+        animation: fadeInUp 0.6s ease-out;
+      }
+
+      .dashboard-header h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        background: linear-gradient(
+          135deg,
+          var(--electric-blue) 0%,
+          var(--electric-blue-light) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+      }
+
+      body.desktop-view .dashboard-header h2 {
+        font-size: 3rem;
+      }
+
+      .dashboard-subtitle {
+        color: var(--text-light);
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      body.desktop-view .dashboard-subtitle {
+        font-size: 1.25rem;
+      }
+
+      .live-indicator {
+        width: 8px;
+        height: 8px;
+        background: var(--traffic-green);
+        border-radius: 50%;
+        animation: pulse 2s ease-in-out infinite;
+        box-shadow: 0 0 8px var(--traffic-green);
+      }
+
+      /* Map Container */
+      .map-container {
+        width: calc(100% + 3rem);
+        margin-left: -1.5rem;
+        margin-right: -1.5rem;
+        height: 300px;
+        margin-bottom: 2rem;
+        border-top: 1px solid var(--medium-gray);
+        border-bottom: 1px solid var(--medium-gray);
+        position: relative;
+      }
+
+      body.desktop-view .map-container {
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+        height: 500px;
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid var(--medium-gray);
+      }
+
+      #map {
+        width: 100%;
+        height: 100%;
+      }
+
+      .map-toggle {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .toggle-btn {
+        flex: 1;
+        padding: 0.75rem;
+        background: var(--white);
+        border: 2px solid var(--medium-gray);
+        border-radius: 12px;
+        font-family: "Poppins", sans-serif;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .toggle-btn.active {
+        background: var(--electric-blue);
+        color: var(--white);
+        border-color: var(--electric-blue);
+      }
+
+      .toggle-btn:hover {
+        border-color: var(--electric-blue);
+      }
+
+      /* Zone Cards */
+      .zones-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
+
+      body.desktop-view .zones-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        gap: 2rem;
+      }
+
+      .zone-card {
+        background: var(--white);
+        border-radius: 20px;
+        padding: 1.75rem;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s;
+        animation: cardSlideIn 0.5s ease-out both;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .zone-card::before {
+        content: "";
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(
+          135deg,
+          var(--electric-blue) 0%,
+          var(--electric-blue-light) 100%
+        );
+        border-radius: 20px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: -1;
+      }
+
+      .zone-card:nth-child(1) {
+        animation-delay: 0.1s;
+      }
+      .zone-card:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .zone-card:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+
+      .zone-card:hover {
+        box-shadow: 0 12px 36px rgba(0, 82, 204, 0.2);
+        transform: translateY(-4px);
+      }
+
+      .zone-card:hover::before {
+        opacity: 0.1;
+      }
+
+      .zone-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .zone-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 0.375rem;
+      }
+
+      .zone-type {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: var(--soft-gray);
+        color: var(--text-light);
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .availability-display {
+        text-align: center;
+        margin-bottom: 1.25rem;
+      }
+
+      .slots-number {
+        font-size: 3.5rem;
+        font-weight: 800;
+        background: linear-gradient(
+          135deg,
+          var(--electric-blue) 0%,
+          var(--electric-blue-light) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1;
+        margin-bottom: 0.25rem;
+        animation: countUp 1s ease-out;
+      }
+
+      @keyframes countUp {
+        from {
+          opacity: 0;
+          transform: scale(0.5);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      .slots-label {
+        font-size: 0.9rem;
+        color: var(--text-light);
+        font-weight: 600;
+      }
+
+      /* Progress Bar */
+      .progress-container {
+        margin-bottom: 1rem;
+      }
+
+      .progress-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+      }
+
+      .progress-label {
+        color: var(--text-light);
+        font-weight: 500;
+      }
+
+      .progress-percentage {
+        color: var(--electric-blue);
+        font-weight: 700;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: var(--soft-gray);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          var(--electric-blue),
+          var(--electric-blue-light)
+        );
+        border-radius: 10px;
+        transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: fillProgress 1.5s ease-out;
+        box-shadow: 0 0 10px rgba(0, 82, 204, 0.3);
+      }
+
+      @keyframes fillProgress {
+        from {
+          width: 0;
+        }
+      }
+
+      /* Action Buttons */
+      .zone-actions {
+        display: flex;
+        gap: 0.75rem;
+      }
+
+      .book-button {
+        flex: 1;
+        padding: 1rem;
+        background: linear-gradient(
+          135deg,
+          var(--electric-blue) 0%,
+          var(--electric-blue-light) 100%
+        );
+        color: var(--white);
+        border: none;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 700;
+        font-family: "Poppins", sans-serif;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 16px rgba(0, 82, 204, 0.3);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .book-button::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        transform: translate(-50%, -50%);
+        transition:
+          width 0.6s,
+          height 0.6s;
+      }
+
+      .book-button:hover::before {
+        width: 300px;
+        height: 300px;
+      }
+
+      .book-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 82, 204, 0.4);
+      }
+
+      .book-button:active {
+        transform: translateY(0);
+      }
+
+      .directions-button {
+        padding: 1rem;
+        background: var(--white);
+        color: var(--electric-blue);
+        border: 2px solid var(--electric-blue);
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 700;
+        font-family: "Poppins", sans-serif;
+        cursor: pointer;
+        transition: all 0.3s;
+        width: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .directions-button:hover {
+        background: var(--electric-blue);
+        color: var(--white);
+        transform: translateY(-2px);
+      }
+
+      /* CTA Section */
+      .cta-section {
+        background: linear-gradient(
+          135deg,
+          var(--electric-blue) 0%,
+          var(--electric-blue-light) 100%
+        );
+        padding: 3rem 1.5rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+      }
+
+      body.desktop-view .cta-section {
+        padding: 5rem 3rem;
+      }
+
+      .cta-section::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(
+          circle,
+          rgba(255, 255, 255, 0.1) 0%,
+          transparent 70%
+        );
+        animation: rotate 20s linear infinite;
+      }
+
+      .cta-content {
+        position: relative;
+        z-index: 1;
+      }
+
+      .cta-content h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--white);
+        margin-bottom: 1rem;
+      }
+
+      body.desktop-view .cta-content h2 {
+        font-size: 3rem;
+      }
+
+      .cta-content p {
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 1.5rem;
+      }
+
+      body.desktop-view .cta-content p {
+        font-size: 1.25rem;
+      }
+
+      .cta-button {
+        background: var(--white);
+        color: var(--electric-blue);
+        padding: 1rem 2.5rem;
+        border: none;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 700;
+        font-family: "Poppins", sans-serif;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      }
+
+      .cta-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      }
+
+      /* Footer */
+      .footer {
+        background: var(--soft-gray);
+        padding: 2rem 1.5rem 1.5rem;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+      }
+
+      body.desktop-view .footer {
+        padding: 3rem;
+      }
+
+      .footer-links {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .footer-links a {
+        color: var(--text-light);
+        text-decoration: none;
+        font-size: 0.875rem;
+        transition: color 0.3s;
+      }
+
+      .footer-links a:hover {
+        color: var(--electric-blue);
+      }
+
+      .footer-text {
+        color: var(--text-light);
+        font-size: 0.8rem;
+      }
+
+      /* Custom Leaflet Popup Styling */
+      .leaflet-popup-content-wrapper {
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      }
+
+      .custom-popup {
+        font-family: "Poppins", sans-serif;
+        padding: 0.5rem;
+      }
+
+      .custom-popup h3 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+      }
+
+      .custom-popup p {
+        font-size: 0.875rem;
+        color: var(--text-light);
+        margin-bottom: 0.25rem;
+      }
+
+      .custom-popup .status {
+        color: var(--traffic-green);
+        font-weight: 600;
+      }
+
+      /* Hidden class for screen switching */
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg-accent"></div>
+
+    <!-- View Toggle Button -->
+    <button
+      class="view-toggle"
+      onclick="toggleView()"
+      title="Toggle Mobile/Desktop View"
+    >
+      <span id="viewIcon">💻</span>
+    </button>
+
+    <div class="app-container">
+      <!-- Screen 1: Mall Selector -->
+      <div id="screen1">
+        <nav class="navbar">
+          <div class="logo-container">
+            <img src="logo.png" alt="Garahe.ph Logo" class="logo-img" />
+            <div class="logo">Garahe.ph</div>
+          </div>
+          <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </nav>
+
+        <div class="hero">
+          <h1>Where are you parking today?</h1>
+          <p class="hero-subtitle">
+            Find and book parking spots instantly across Metro Manila
+          </p>
+          <div class="search-container">
+            <span class="search-icon">🔍</span>
+            <input
+              type="text"
+              class="search-bar"
+              placeholder="Search destination..."
+              id="searchInput"
+            />
+          </div>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-number">30+</div>
+              <div class="stat-label">Parking Zones</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">15K+</div>
+              <div class="stat-label">Monthly Users</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">95%</div>
+              <div class="stat-label">Satisfaction</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header">Popular Destinations</div>
+
+        <div class="destinations-list">
+          <div
+            class="destination-card"
+            onclick="showDashboard('Divisoria Mall Complex', 14.6042, 120.9822)"
+          >
+            <div class="card-header">
+              <div>
+                <div class="card-title">Divisoria Mall Complex</div>
+                <div class="card-location">
+                  <span class="location-pin">📍</span>
+                  <span>Manila City</span>
+                </div>
+              </div>
+              <span class="status-badge available">
+                <span class="status-dot green"></span>
+                Live
+              </span>
+            </div>
+            <div class="card-info">
+              <div class="info-item">
+                <span>🅿️</span>
+                <span>450+ slots</span>
+              </div>
+              <div class="info-item">
+                <span>💰</span>
+                <span>₱30-35/hr</span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="destination-card"
+            onclick="showDashboard('Quiapo Market Area', 14.5995, 120.9842)"
+          >
+            <div class="card-header">
+              <div>
+                <div class="card-title">Quiapo Market Area</div>
+                <div class="card-location">
+                  <span class="location-pin">📍</span>
+                  <span>Manila City</span>
+                </div>
+              </div>
+              <span class="status-badge available">
+                <span class="status-dot green"></span>
+                Live
+              </span>
+            </div>
+            <div class="card-info">
+              <div class="info-item">
+                <span>🅿️</span>
+                <span>200+ slots</span>
+              </div>
+              <div class="info-item">
+                <span>💰</span>
+                <span>₱15-30/hr</span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="destination-card"
+            onclick="showDashboard('Baclaran Church Area', 14.5245, 121.0026)"
+          >
+            <div class="card-header">
+              <div>
+                <div class="card-title">Baclaran Church Area</div>
+                <div class="card-location">
+                  <span class="location-pin">📍</span>
+                  <span>Parañaque City</span>
+                </div>
+              </div>
+              <span class="status-badge available">
+                <span class="status-dot green"></span>
+                Live
+              </span>
+            </div>
+            <div class="card-info">
+              <div class="info-item">
+                <span>🅿️</span>
+                <span>300+ slots</span>
+              </div>
+              <div class="info-item">
+                <span>💰</span>
+                <span>₱20-35/hr</span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="destination-card"
+            onclick="
+              showDashboard('Greenhills Shopping Center', 14.6027, 121.0495)
+            "
+          >
+            <div class="card-header">
+              <div>
+                <div class="card-title">Greenhills Shopping Center</div>
+                <div class="card-location">
+                  <span class="location-pin">📍</span>
+                  <span>San Juan City</span>
+                </div>
+              </div>
+              <span class="status-badge available">
+                <span class="status-dot green"></span>
+                Live
+              </span>
+            </div>
+            <div class="card-info">
+              <div class="info-item">
+                <span>🅿️</span>
+                <span>500+ slots</span>
+              </div>
+              <div class="info-item">
+                <span>💰</span>
+                <span>₱30-45/hr</span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="destination-card"
+            onclick="showDashboard('Binondo Chinatown', 14.599, 120.9751)"
+          >
+            <div class="card-header">
+              <div>
+                <div class="card-title">Binondo Chinatown</div>
+                <div class="card-location">
+                  <span class="location-pin">📍</span>
+                  <span>Manila City</span>
+                </div>
+              </div>
+              <span class="status-badge available">
+                <span class="status-dot green"></span>
+                Live
+              </span>
+            </div>
+            <div class="card-info">
+              <div class="info-item">
+                <span>🅿️</span>
+                <span>180+ slots</span>
+              </div>
+              <div class="info-item">
+                <span>💰</span>
+                <span>₱25-50/hr</span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="destination-card"
+            onclick="showDashboard('SM Mall of Asia', 14.5354, 120.9819)"
+          >
+            <div class="card-header">
+              <div>
+                <div class="card-title">SM Mall of Asia</div>
+                <div class="card-location">
+                  <span class="location-pin">📍</span>
+                  <span>Pasay City</span>
+                </div>
+              </div>
+              <span class="status-badge available">
+                <span class="status-dot green"></span>
+                Live
+              </span>
+            </div>
+            <div class="card-info">
+              <div class="info-item">
+                <span>🅿️</span>
+                <span>800+ slots</span>
+              </div>
+              <div class="info-item">
+                <span>💰</span>
+                <span>₱40-60/hr</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Features Section -->
+        <section class="features-section">
+          <div class="features-header">
+            <h2>Why Choose Garahe.ph?</h2>
+            <p>Smart parking made simple</p>
+          </div>
+          <div class="features-grid">
+            <div class="feature-item">
+              <span class="feature-icon">🅿️</span>
+              <h3>Guaranteed Spots</h3>
+              <p>Reserve ahead</p>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">💰</span>
+              <h3>Best Prices</h3>
+              <p>Up to 30% off</p>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">📱</span>
+              <h3>Easy Booking</h3>
+              <p>Book in seconds</p>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">🔔</span>
+              <h3>Live Updates</h3>
+              <p>Real-time info</p>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">🎫</span>
+              <h3>Flexible Plans</h3>
+              <p>Hourly to monthly</p>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">⚡</span>
+              <h3>Instant QR</h3>
+              <p>Fast entry/exit</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta-section">
+          <div class="cta-content">
+            <h2>Ready to Park Smarter?</h2>
+            <p>Join thousands who've switched to stress-free parking</p>
+            <button class="cta-button">Get Started Today</button>
+          </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+          <div class="footer-links">
+            <a href="#">About</a>
+            <a href="#">Help Center</a>
+            <a href="#">Terms</a>
+            <a href="#">Privacy</a>
+          </div>
+          <p class="footer-text">&copy; 2026 Garahe.ph. Sy's Team</p>
+        </footer>
+      </div>
+
+      <!-- Screen 2: Dashboard -->
+      <div id="screen2" class="hidden">
+        <nav class="navbar">
+          <div class="back-button" onclick="showMallSelector()">
+            <span class="back-arrow">←</span>
+            <span>Back</span>
+          </div>
+          <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </nav>
+
+        <div class="dashboard">
+          <div class="dashboard-header">
+            <h2 id="mallName">SM Mall of Asia</h2>
+            <div class="dashboard-subtitle">
+              <span class="live-indicator"></span>
+              Real-time parking availability
+            </div>
+          </div>
+
+          <!-- Map Toggle -->
+          <div class="map-toggle">
+            <button class="toggle-btn active" onclick="showView('zones')">
+              Parking Zones
+            </button>
+            <button class="toggle-btn" onclick="showView('map')">
+              Map View
+            </button>
+          </div>
+
+          <!-- Map Container -->
+          <div class="map-container hidden" id="mapContainer">
+            <div id="map"></div>
+          </div>
+
+          <div class="zones-container" id="zonesContainer">
+            <div class="zone-card">
+              <div class="zone-header">
+                <div>
+                  <div class="zone-title">South Wing Parking</div>
+                  <span class="zone-type">Indoor</span>
+                </div>
+              </div>
+              <div class="availability-display">
+                <div class="slots-number">200</div>
+                <div class="slots-label">Available Slots</div>
+              </div>
+              <div class="progress-container">
+                <div class="progress-info">
+                  <span class="progress-label">Capacity</span>
+                  <span class="progress-percentage">67% Available</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: 67%"></div>
+                </div>
+              </div>
+              <div class="zone-actions">
+                <button class="book-button">Book Now - ₱60/hr</button>
+                <button
+                  class="directions-button"
+                  onclick="openDirections(14.5354, 120.9819)"
+                  title="Get Directions"
+                >
+                  🧭
+                </button>
+              </div>
+            </div>
+
+            <div class="zone-card">
+              <div class="zone-header">
+                <div>
+                  <div class="zone-title">MAAX Open Lot</div>
+                  <span class="zone-type">Outdoor</span>
+                </div>
+              </div>
+              <div class="availability-display">
+                <div class="slots-number">150</div>
+                <div class="slots-label">Available Slots</div>
+              </div>
+              <div class="progress-container">
+                <div class="progress-info">
+                  <span class="progress-label">Capacity</span>
+                  <span class="progress-percentage">75% Available</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: 75%"></div>
+                </div>
+              </div>
+              <div class="zone-actions">
+                <button class="book-button">Book Now - ₱40/hr</button>
+                <button
+                  class="directions-button"
+                  onclick="openDirections(14.536, 120.9825)"
+                  title="Get Directions"
+                >
+                  🧭
+                </button>
+              </div>
+            </div>
+
+            <div class="zone-card">
+              <div class="zone-header">
+                <div>
+                  <div class="zone-title">North Wing Parking</div>
+                  <span class="zone-type">Indoor</span>
+                </div>
+              </div>
+              <div class="availability-display">
+                <div class="slots-number">45</div>
+                <div class="slots-label">Available Slots</div>
+              </div>
+              <div class="progress-container">
+                <div class="progress-info">
+                  <span class="progress-label">Capacity</span>
+                  <span class="progress-percentage">23% Available</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: 23%"></div>
+                </div>
+              </div>
+              <div class="zone-actions">
+                <button class="book-button">Book Now - ₱60/hr</button>
+                <button
+                  class="directions-button"
+                  onclick="openDirections(14.5348, 120.9815)"
+                  title="Get Directions"
+                >
+                  🧭
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+      let map;
+      let currentLat, currentLng;
+      let isDesktopView = false;
+
+      // Check if user is logged in on page load
+      window.addEventListener("DOMContentLoaded", function () {
+        const isLoggedIn = localStorage.getItem("userLoggedIn");
+        const isGuest = localStorage.getItem("isGuest");
+
+        // If not logged in and not guest, redirect to home page
+        if (!isLoggedIn && !isGuest) {
+          window.location.href = "home.html";
+        }
+
+        // Update hamburger menu with user info or logout
+        updateUserMenu();
+      });
+
+      // Update hamburger menu
+      function updateUserMenu() {
+        const hamburger = document.querySelector(".hamburger");
+        const isGuest = localStorage.getItem("isGuest") === "true";
+        const userEmail = localStorage.getItem("userEmail");
+
+        hamburger.addEventListener("click", function () {
+          const menu = document.createElement("div");
+          menu.style.cssText = `
+                    position: fixed;
+                    top: 70px;
+                    right: 1.5rem;
+                    background: white;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+                    padding: 1rem;
+                    z-index: 1000;
+                    min-width: 200px;
+                `;
+
+          if (isGuest) {
+            menu.innerHTML = `
+                        <div style="padding: 0.5rem; border-bottom: 1px solid #DFE1E6; margin-bottom: 0.5rem;">
+                            <strong>Guest Mode</strong>
+                        </div>
+                        <a href="home.html" style="display: block; padding: 0.5rem; color: #0052CC; text-decoration: none; border-radius: 8px; transition: background 0.2s;" onmouseover="this.style.background='#F4F5F7'" onmouseout="this.style.background='transparent'">
+                            Sign In / Sign Up
+                        </a>
+                    `;
+          } else {
+            menu.innerHTML = `
+                        <div style="padding: 0.5rem; border-bottom: 1px solid #DFE1E6; margin-bottom: 0.5rem; font-size: 0.875rem; color: #5E6C84;">
+                            ${userEmail || "User Account"}
+                        </div>
+                        <a href="#" onclick="logout()" style="display: block; padding: 0.5rem; color: #DE350B; text-decoration: none; border-radius: 8px; transition: background 0.2s;" onmouseover="this.style.background='#F4F5F7'" onmouseout="this.style.background='transparent'">
+                            Logout
+                        </a>
+                    `;
+          }
+
+          // Remove menu if clicked outside
+          document.addEventListener(
+            "click",
+            function (e) {
+              if (!menu.contains(e.target) && !hamburger.contains(e.target)) {
+                menu.remove();
+              }
+            },
+            { once: true },
+          );
+
+          document.body.appendChild(menu);
+        });
+      }
+
+      // Logout function
+      function logout() {
+        localStorage.removeItem("userLoggedIn");
+        localStorage.removeItem("userEmail");
+        localStorage.removeItem("isGuest");
+        window.location.href = "home.html";
+      }
+
+      // Toggle between mobile and desktop view
+      function toggleView() {
+        isDesktopView = !isDesktopView;
+        document.body.classList.toggle("desktop-view");
+
+        const viewIcon = document.getElementById("viewIcon");
+        viewIcon.textContent = isDesktopView ? "📱" : "💻";
+
+        // Invalidate map size if it's visible
+        if (map) {
+          setTimeout(() => map.invalidateSize(), 300);
+        }
+      }
+
+      // 1. The Smart Dashboard Function
+      function showDashboard(mallName, lat, lng) {
+        // Switch screens
+        document.getElementById("screen1").classList.add("hidden");
+        document.getElementById("screen2").classList.remove("hidden");
+        document.getElementById("mallName").textContent = mallName;
+
+        currentLat = lat;
+        currentLng = lng;
+        window.scrollTo(0, 0);
+
+        // 2. FETCH REAL DATA FROM JAVA!
+        fetch(`/api/zones?mall=${encodeURIComponent(mallName)}`)
+          .then((response) => response.json())
+          .then((zones) => {
+            console.log("Data received:", zones);
+            renderZones(zones);
+          })
+          .catch((error) => {
+            console.error("Error fetching data:", error);
+            document.getElementById("zonesContainer").innerHTML =
+              "<p style='text-align: center; color: #DE350B; padding: 2rem;'>Failed to load parking zones. Please try again.</p>";
+          });
+      }
+
+      // 3. The Card Generator
+      function renderZones(zones) {
+        const container = document.getElementById("zonesContainer");
+        container.innerHTML = "";
+
+        if (!zones || zones.length === 0) {
+          container.innerHTML =
+            "<p style='text-align: center; padding: 2rem; color: #5E6C84;'>No parking zones found.</p>";
+          return;
+        }
+
+        zones.forEach((zone) => {
+          const percent = zone.availableSlots
+            ? Math.floor((zone.availableSlots / zone.totalCapacity) * 100)
+            : 0;
+
+          const cardHtml = `
+        <div class="zone-card">
+          <div class="zone-header">
+            <div>
+              <div class="zone-title">${zone.name}</div>
+              <span class="zone-type">${zone.type}</span>
+            </div>
+          </div>
+          <div class="availability-display">
+            <div class="slots-number">${zone.availableSlots || zone.totalCapacity}</div>
+            <div class="slots-label">Available Slots</div>
+          </div>
+          <div class="progress-container">
+            <div class="progress-info">
+              <span class="progress-label">Capacity</span>
+              <span class="progress-percentage">${percent}% Available</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${percent}%;"></div>
+            </div>
+          </div>
+          <div class="zone-actions">
+            <button class="book-button" onclick="bookSlot('${encodeURIComponent(zone.name)}', ${zone.id}, ${zone.hourlyRate || 60}, '${zone.type}', ${zone.availableSlots || zone.totalCapacity}, '${encodeURIComponent(document.getElementById("mallName").textContent)}')">Book Now - ₱${zone.hourlyRate || 60}/hr</button>
+            <button class="directions-button" onclick="openDirections(${currentLat}, ${currentLng})" title="Get Directions">🧭</button>
+          </div>
+        </div>
+        `;
+          container.innerHTML += cardHtml;
+        });
+      }
+
+      // Redirect to booking page with zone data
+      function bookSlot(zoneName, zoneId, rate, type, slots, mall) {
+        // Create booking URL with all necessary data
+        const params = new URLSearchParams({
+          zoneId: zoneId,
+          zoneName: zoneName,
+          rate: rate,
+          zoneType: type,
+          slots: slots,
+          mall: mall,
+        });
+
+        // Redirect to booking page
+        window.location.href = `booking.html?${params.toString()}`;
+      }
+
+      function showMallSelector() {
+        document.getElementById("screen2").classList.add("hidden");
+        document.getElementById("screen1").classList.remove("hidden");
+        window.scrollTo(0, 0);
+      }
+
+      // View toggle
+      function showView(view) {
+        const buttons = document.querySelectorAll(".toggle-btn");
+        buttons.forEach((btn) => btn.classList.remove("active"));
+
+        if (view === "map") {
+          document.getElementById("mapContainer").classList.remove("hidden");
+          document.getElementById("zonesContainer").classList.add("hidden");
+          buttons[1].classList.add("active");
+
+          // Initialize map if not already done
+          if (!map) {
+            initMap();
+          } else {
+            map.invalidateSize();
+          }
+        } else {
+          document.getElementById("mapContainer").classList.add("hidden");
+          document.getElementById("zonesContainer").classList.remove("hidden");
+          buttons[0].classList.add("active");
+        }
+      }
+
+      // Initialize map
+      function initMap() {
+        map = L.map("map").setView([currentLat, currentLng], 15);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap contributors",
+          maxZoom: 19,
+        }).addTo(map);
+
+        // Add markers for parking zones
+        const parkingZones = [
+          {
+            name: "South Wing Parking",
+            lat: currentLat,
+            lng: currentLng,
+            slots: 200,
+            type: "Indoor",
+            rate: "₱60/hr",
+          },
+          {
+            name: "MAAX Open Lot",
+            lat: currentLat + 0.0006,
+            lng: currentLng + 0.0006,
+            slots: 150,
+            type: "Outdoor",
+            rate: "₱40/hr",
+          },
+          {
+            name: "North Wing Parking",
+            lat: currentLat - 0.0006,
+            lng: currentLng - 0.0004,
+            slots: 45,
+            type: "Indoor",
+            rate: "₱60/hr",
+          },
+        ];
+
+        parkingZones.forEach((zone) => {
+          const marker = L.marker([zone.lat, zone.lng]).addTo(map);
+          marker.bindPopup(`
+                    <div class="custom-popup">
+                        <h3>${zone.name}</h3>
+                        <p><strong>Type:</strong> ${zone.type}</p>
+                        <p><strong>Available:</strong> <span class="status">${zone.slots} slots</span></p>
+                        <p><strong>Rate:</strong> ${zone.rate}</p>
+                    </div>
+                `);
+        });
+      }
+
+      // Open directions in Google Maps or other map app
+      function openDirections(lat, lng) {
+        // Try to get user's location first
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const userLat = position.coords.latitude;
+              const userLng = position.coords.longitude;
+              // Open Google Maps with directions
+              window.open(
+                `https://www.google.com/maps/dir/${userLat},${userLng}/${lat},${lng}`,
+                "_blank",
+              );
+            },
+            (error) => {
+              // If location access denied, just open the destination
+              window.open(
+                `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
+                "_blank",
+              );
+            },
+          );
+        } else {
+          // Fallback if geolocation not supported
+          window.open(
+            `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
+            "_blank",
+          );
+        }
+      }
+
+      // Search functionality
+      const searchInput = document.getElementById("searchInput");
+      searchInput.addEventListener("input", function (e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const cards = document.querySelectorAll(".destination-card");
+
+        cards.forEach((card) => {
+          const title = card
+            .querySelector(".card-title")
+            .textContent.toLowerCase();
+          if (title.includes(searchTerm)) {
+            card.style.display = "block";
+          } else {
+            card.style.display = "none";
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,855 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Book Parking - Garahe.ph</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;900&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary-blue: #0052cc;
+        --primary-dark: #003d99;
+        --primary-light: #0065ff;
+        --success-green: #36b37e;
+        --warning-yellow: #ffab00;
+        --danger-red: #de350b;
+        --bg-light: #f4f5f7;
+        --bg-white: #ffffff;
+        --text-dark: #172b4d;
+        --text-gray: #5e6c84;
+        --border-color: #dfe1e6;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Manrope", sans-serif;
+        background: linear-gradient(135deg, #f4f5f7 0%, #e8eaf0 100%);
+        color: var(--text-dark);
+        min-height: 100vh;
+        padding: 1rem;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      /* Animated background pattern */
+      body::before {
+        content: "";
+        position: fixed;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: repeating-linear-gradient(
+          45deg,
+          transparent,
+          transparent 60px,
+          rgba(0, 82, 204, 0.02) 60px,
+          rgba(0, 82, 204, 0.02) 120px
+        );
+        animation: patternSlide 30s linear infinite;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      @keyframes patternSlide {
+        0% {
+          transform: translate(0, 0);
+        }
+        100% {
+          transform: translate(60px, 60px);
+        }
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* Header */
+      .header {
+        background: var(--bg-white);
+        padding: 1.5rem;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(23, 43, 77, 0.08);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        animation: slideDown 0.5s ease-out;
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .back-btn {
+        background: var(--bg-light);
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 1.25rem;
+      }
+
+      .back-btn:hover {
+        background: var(--primary-blue);
+        color: white;
+        transform: translateX(-3px);
+      }
+
+      .header-title {
+        flex: 1;
+      }
+
+      .header-title h1 {
+        font-family: "Archivo", sans-serif;
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: var(--text-dark);
+        margin-bottom: 0.25rem;
+      }
+
+      .header-title p {
+        font-size: 0.875rem;
+        color: var(--text-gray);
+      }
+
+      /* Zone Info Card */
+      .zone-info {
+        background: linear-gradient(
+          135deg,
+          var(--primary-blue) 0%,
+          var(--primary-dark) 100%
+        );
+        padding: 1.5rem;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0, 82, 204, 0.25);
+        margin-bottom: 1.5rem;
+        color: white;
+        animation: fadeInUp 0.6s ease-out 0.1s both;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .zone-name {
+        font-family: "Archivo", sans-serif;
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+      }
+
+      .zone-details {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .zone-detail-item {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 0.75rem;
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+      }
+
+      .zone-detail-label {
+        font-size: 0.75rem;
+        opacity: 0.9;
+        margin-bottom: 0.25rem;
+      }
+
+      .zone-detail-value {
+        font-size: 1.125rem;
+        font-weight: 700;
+      }
+
+      /* Booking Form */
+      .booking-form {
+        background: var(--bg-white);
+        padding: 2rem;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(23, 43, 77, 0.08);
+        animation: fadeInUp 0.6s ease-out 0.2s both;
+      }
+
+      .form-section {
+        margin-bottom: 2rem;
+      }
+
+      .form-section:last-child {
+        margin-bottom: 0;
+      }
+
+      .section-title {
+        font-family: "Archivo", sans-serif;
+        font-size: 1.125rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: var(--text-dark);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .section-title::before {
+        content: "";
+        width: 4px;
+        height: 24px;
+        background: var(--primary-blue);
+        border-radius: 2px;
+      }
+
+      .form-group {
+        margin-bottom: 1rem;
+      }
+
+      .form-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+      }
+
+      .form-input,
+      .form-select {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 10px;
+        font-family: "Manrope", sans-serif;
+        font-size: 1rem;
+        color: var(--text-dark);
+        transition: all 0.3s;
+        background: var(--bg-white);
+      }
+
+      .form-input:focus,
+      .form-select:focus {
+        outline: none;
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
+      }
+
+      .form-select {
+        cursor: pointer;
+      }
+
+      /* Duration Selector */
+      .duration-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+      }
+
+      .duration-option {
+        padding: 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: var(--bg-white);
+      }
+
+      .duration-option:hover {
+        border-color: var(--primary-blue);
+        transform: translateY(-2px);
+      }
+
+      .duration-option.selected {
+        background: var(--primary-blue);
+        border-color: var(--primary-blue);
+        color: white;
+      }
+
+      .duration-hours {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+      }
+
+      .duration-label {
+        font-size: 0.75rem;
+        opacity: 0.8;
+      }
+
+      /* Cost Summary */
+      .cost-summary {
+        background: linear-gradient(135deg, #f4f5f7 0%, #e8eaf0 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-top: 1.5rem;
+      }
+
+      .cost-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+      }
+
+      .cost-row:last-child {
+        margin-bottom: 0;
+        padding-top: 0.75rem;
+        border-top: 2px solid var(--border-color);
+      }
+
+      .cost-label {
+        font-size: 0.875rem;
+        color: var(--text-gray);
+      }
+
+      .cost-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-dark);
+      }
+
+      .cost-total {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-blue);
+      }
+
+      /* Submit Button */
+      .submit-btn {
+        width: 100%;
+        padding: 1.25rem;
+        background: linear-gradient(
+          135deg,
+          var(--primary-blue) 0%,
+          var(--primary-dark) 100%
+        );
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-family: "Archivo", sans-serif;
+        font-size: 1.125rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 16px rgba(0, 82, 204, 0.3);
+        margin-top: 1.5rem;
+      }
+
+      .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(0, 82, 204, 0.4);
+      }
+
+      .submit-btn:active {
+        transform: translateY(0);
+      }
+
+      .submit-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      /* Success Modal */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(23, 43, 77, 0.8);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+      }
+
+      .modal.active {
+        display: flex;
+      }
+
+      .modal-content {
+        background: var(--bg-white);
+        padding: 2rem;
+        border-radius: 20px;
+        max-width: 400px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: modalSlideUp 0.5s ease-out;
+      }
+
+      @keyframes modalSlideUp {
+        from {
+          opacity: 0;
+          transform: translateY(40px) scale(0.9);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .success-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(
+          135deg,
+          var(--success-green) 0%,
+          #2a9068 100%
+        );
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 2.5rem;
+        animation: successPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      }
+
+      @keyframes successPop {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.2);
+        }
+      }
+
+      .modal-title {
+        font-family: "Archivo", sans-serif;
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+      }
+
+      .modal-text {
+        color: var(--text-gray);
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+      }
+
+      .booking-code {
+        background: linear-gradient(135deg, #f4f5f7 0%, #e8eaf0 100%);
+        padding: 1rem;
+        border-radius: 10px;
+        font-family: "Archivo", monospace;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--primary-blue);
+        margin-bottom: 1.5rem;
+        letter-spacing: 2px;
+      }
+
+      .modal-btn {
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(
+          135deg,
+          var(--primary-blue) 0%,
+          var(--primary-dark) 100%
+        );
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-family: "Archivo", sans-serif;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .modal-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 82, 204, 0.3);
+      }
+
+      /* Loading State */
+      .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Responsive */
+      @media (max-width: 640px) {
+        .duration-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .zone-details {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="header-title">
+          <h1>Book Your Slot</h1>
+          <p>Complete your parking reservation</p>
+        </div>
+      </div>
+
+      <!-- Zone Info -->
+      <div class="zone-info">
+        <div class="zone-name" id="zoneName">Loading...</div>
+        <div class="zone-details">
+          <div class="zone-detail-item">
+            <div class="zone-detail-label">Type</div>
+            <div class="zone-detail-value" id="zoneType">-</div>
+          </div>
+          <div class="zone-detail-item">
+            <div class="zone-detail-label">Hourly Rate</div>
+            <div class="zone-detail-value" id="zoneRate">-</div>
+          </div>
+          <div class="zone-detail-item">
+            <div class="zone-detail-label">Available</div>
+            <div class="zone-detail-value" id="zoneSlots">-</div>
+          </div>
+          <div class="zone-detail-item">
+            <div class="zone-detail-label">Mall</div>
+            <div class="zone-detail-value" id="zoneMall">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Booking Form -->
+      <form class="booking-form" id="bookingForm">
+        <!-- Time & Duration -->
+        <div class="form-section">
+          <div class="section-title">⏰ Time & Duration</div>
+
+          <div class="form-group">
+            <label class="form-label">Start Time</label>
+            <input
+              type="datetime-local"
+              class="form-input"
+              id="startTime"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Duration</label>
+            <div class="duration-grid">
+              <div class="duration-option" onclick="selectDuration(1)">
+                <div class="duration-hours">1h</div>
+                <div class="duration-label">Quick stop</div>
+              </div>
+              <div class="duration-option" onclick="selectDuration(2)">
+                <div class="duration-hours">2h</div>
+                <div class="duration-label">Shopping</div>
+              </div>
+              <div class="duration-option selected" onclick="selectDuration(3)">
+                <div class="duration-hours">3h</div>
+                <div class="duration-label">Popular</div>
+              </div>
+              <div class="duration-option" onclick="selectDuration(4)">
+                <div class="duration-hours">4h</div>
+                <div class="duration-label">Extended</div>
+              </div>
+            </div>
+            <input type="hidden" id="duration" value="3" />
+          </div>
+        </div>
+
+        <!-- Vehicle Info -->
+        <div class="form-section">
+          <div class="section-title">🚗 Vehicle Information</div>
+
+          <div class="form-group">
+            <label class="form-label">Plate Number</label>
+            <input
+              type="text"
+              class="form-input"
+              id="plateNumber"
+              placeholder="ABC 1234"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Vehicle Type</label>
+            <select class="form-select" id="vehicleType" required>
+              <option value="">Select type</option>
+              <option value="Sedan">Sedan</option>
+              <option value="SUV">SUV</option>
+              <option value="Hatchback">Hatchback</option>
+              <option value="MPV">MPV/Van</option>
+              <option value="Pickup">Pickup Truck</option>
+              <option value="Motorcycle">Motorcycle</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Guest Info (if not logged in) -->
+        <div class="form-section" id="guestSection" style="display: none">
+          <div class="section-title">👤 Contact Information</div>
+
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input
+              type="text"
+              class="form-input"
+              id="guestName"
+              placeholder="Juan Dela Cruz"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input
+              type="email"
+              class="form-input"
+              id="guestEmail"
+              placeholder="juan@email.com"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Phone Number</label>
+            <input
+              type="tel"
+              class="form-input"
+              id="guestPhone"
+              placeholder="09XX XXX XXXX"
+            />
+          </div>
+        </div>
+
+        <!-- Cost Summary -->
+        <div class="cost-summary">
+          <div class="cost-row">
+            <span class="cost-label">Hourly Rate</span>
+            <span class="cost-value">₱<span id="displayRate">0</span>/hr</span>
+          </div>
+          <div class="cost-row">
+            <span class="cost-label">Duration</span>
+            <span class="cost-value"
+              ><span id="displayDuration">3</span> hours</span
+            >
+          </div>
+          <div class="cost-row">
+            <span class="cost-label">Total Amount</span>
+            <span class="cost-total">₱<span id="totalCost">0</span></span>
+          </div>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">
+          Confirm Booking
+        </button>
+      </form>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal" id="successModal">
+      <div class="modal-content">
+        <div class="success-icon">✓</div>
+        <h2 class="modal-title">Booking Confirmed!</h2>
+        <p class="modal-text">
+          Your parking slot has been reserved successfully.
+        </p>
+        <div class="booking-code" id="bookingCodeDisplay">GRH-XXXX-XXXX</div>
+        <p class="modal-text" style="font-size: 0.875rem">
+          Save this code for check-in
+        </p>
+        <button class="modal-btn" onclick="window.location.href = 'index.html'">
+          Back to Home
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // Get booking data from URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const zoneId = urlParams.get("zoneId");
+      const zoneName = urlParams.get("zoneName");
+      const zoneType = urlParams.get("zoneType");
+      const hourlyRate = parseFloat(urlParams.get("rate") || 0);
+      const availableSlots = urlParams.get("slots");
+      const mallName = urlParams.get("mall");
+
+      let selectedDuration = 3;
+
+      // Check if user is logged in
+      const isLoggedIn = localStorage.getItem("userLoggedIn") === "true";
+      const isGuest = localStorage.getItem("isGuest") === "true";
+      const userId = localStorage.getItem("userId");
+      const userEmail = localStorage.getItem("userEmail");
+
+      // Initialize page
+      window.addEventListener("DOMContentLoaded", function () {
+        // Set zone info
+        document.getElementById("zoneName").textContent = decodeURIComponent(
+          zoneName || "Unknown Zone",
+        );
+        document.getElementById("zoneType").textContent = zoneType || "Indoor";
+        document.getElementById("zoneRate").textContent =
+          "₱" + hourlyRate + "/hr";
+        document.getElementById("zoneSlots").textContent =
+          availableSlots + " slots";
+        document.getElementById("zoneMall").textContent = decodeURIComponent(
+          mallName || "N/A",
+        );
+
+        // Set start time to current time
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById("startTime").value = now
+          .toISOString()
+          .slice(0, 16);
+
+        // Show guest section if not logged in
+        if (!isLoggedIn || isGuest) {
+          document.getElementById("guestSection").style.display = "block";
+          document.getElementById("guestName").required = true;
+          document.getElementById("guestEmail").required = true;
+          document.getElementById("guestPhone").required = true;
+        }
+
+        // Update cost
+        updateCost();
+      });
+
+      function goBack() {
+        window.history.back();
+      }
+
+      function selectDuration(hours) {
+        selectedDuration = hours;
+        document.getElementById("duration").value = hours;
+
+        // Update UI
+        document.querySelectorAll(".duration-option").forEach((opt) => {
+          opt.classList.remove("selected");
+        });
+        event.currentTarget.classList.add("selected");
+
+        // Update cost display
+        updateCost();
+      }
+
+      function updateCost() {
+        const duration = selectedDuration;
+        const total = hourlyRate * duration;
+
+        document.getElementById("displayRate").textContent = hourlyRate;
+        document.getElementById("displayDuration").textContent = duration;
+        document.getElementById("totalCost").textContent = total;
+      }
+
+      // Handle form submission
+      document
+        .getElementById("bookingForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const submitBtn = document.getElementById("submitBtn");
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<span class="loading"></span> Processing...';
+
+          // Prepare booking data
+          const bookingData = {
+            zoneId: parseInt(zoneId),
+            startTime: document.getElementById("startTime").value,
+            duration: selectedDuration,
+            vehiclePlateNumber: document
+              .getElementById("plateNumber")
+              .value.toUpperCase(),
+            vehicleType: document.getElementById("vehicleType").value,
+          };
+
+          // Add user ID if logged in, otherwise add guest info
+          if (isLoggedIn && !isGuest && userId) {
+            bookingData.userId = parseInt(userId);
+          } else {
+            bookingData.guestName = document.getElementById("guestName").value;
+            bookingData.guestEmail =
+              document.getElementById("guestEmail").value;
+            bookingData.guestPhone =
+              document.getElementById("guestPhone").value;
+          }
+
+          try {
+            // Send to backend API
+            const response = await fetch("/api/bookings", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(bookingData),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+              // Show success modal with booking code
+              document.getElementById("bookingCodeDisplay").textContent =
+                result.bookingCode || "GRH-2026-XXXXX";
+              document.getElementById("successModal").classList.add("active");
+            } else {
+              alert("Booking failed: " + (result.error || "Please try again"));
+              submitBtn.disabled = false;
+              submitBtn.textContent = "Confirm Booking";
+            }
+          } catch (error) {
+            console.error("Error:", error);
+            alert("Network error. Please check your connection and try again.");
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Confirm Booking";
+          }
+        });
+
+      // Update cost when duration changes
+      document
+        .getElementById("duration")
+        .addEventListener("change", updateCost);
+    </script>
+  </body>
+</html>

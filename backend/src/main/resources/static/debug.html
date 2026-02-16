@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+  <head>
+    <title>API Debug - Garahe.ph</title>
+    <style>
+      body {
+        font-family: monospace;
+        padding: 2rem;
+        background: #1a1a1a;
+        color: #00ff00;
+      }
+      h1 {
+        color: #00ffff;
+      }
+      pre {
+        background: #000;
+        padding: 1rem;
+        border: 1px solid #00ff00;
+        overflow-x: auto;
+      }
+      button {
+        padding: 1rem 2rem;
+        background: #00ff00;
+        color: #000;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        margin: 1rem 0;
+      }
+      .section {
+        margin: 2rem 0;
+        border: 2px solid #333;
+        padding: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🔧 GARAHE.PH API DEBUG TOOL</h1>
+
+    <div class="section">
+      <h2>1. Test Bookings API</h2>
+      <button onclick="testBookings()">Fetch /api/bookings</button>
+      <pre id="bookingsResult">Click button to test...</pre>
+    </div>
+
+    <div class="section">
+      <h2>2. Test Stats API</h2>
+      <button onclick="testStats()">Fetch /api/bookings/stats</button>
+      <pre id="statsResult">Click button to test...</pre>
+    </div>
+
+    <div class="section">
+      <h2>3. Test Zones API</h2>
+      <button onclick="testZones()">
+        Fetch /api/zones?mall=SM Mall of Asia
+      </button>
+      <pre id="zonesResult">Click button to test...</pre>
+    </div>
+
+    <div class="section">
+      <h2>4. Database Check</h2>
+      <p>Run this in MySQL Workbench:</p>
+      <pre>
+SELECT COUNT(*) as total_bookings FROM bookings;
+SELECT * FROM bookings ORDER BY created_at DESC LIMIT 5;</pre
+      >
+    </div>
+
+    <script>
+      async function testBookings() {
+        const result = document.getElementById("bookingsResult");
+        result.textContent = "Loading...";
+
+        try {
+          const response = await fetch("/api/bookings");
+          const data = await response.json();
+
+          let output = "✅ SUCCESS!\n\n";
+          output += "Status: " + response.status + "\n";
+          output += "Count: " + data.length + " bookings\n\n";
+
+          if (data.length > 0) {
+            output += "📋 FIRST BOOKING FIELDS:\n";
+            output += "------------------------\n";
+            const firstBooking = data[0];
+            for (let key in firstBooking) {
+              output += key + ": " + JSON.stringify(firstBooking[key]) + "\n";
+            }
+            output += "\n\n";
+          }
+
+          output += "Full Response:\n" + JSON.stringify(data, null, 2);
+
+          result.textContent = output;
+        } catch (error) {
+          result.textContent = "❌ ERROR!\n\n" + error.message;
+        }
+      }
+
+      async function testStats() {
+        const result = document.getElementById("statsResult");
+        result.textContent = "Loading...";
+
+        try {
+          const response = await fetch("/api/bookings/stats");
+          const data = await response.json();
+
+          result.textContent =
+            "✅ SUCCESS!\n\n" +
+            "Status: " +
+            response.status +
+            "\n\n" +
+            "Full Response:\n" +
+            JSON.stringify(data, null, 2);
+        } catch (error) {
+          result.textContent = "❌ ERROR!\n\n" + error.message;
+        }
+      }
+
+      async function testZones() {
+        const result = document.getElementById("zonesResult");
+        result.textContent = "Loading...";
+
+        try {
+          const response = await fetch("/api/zones?mall=SM Mall of Asia");
+          const data = await response.json();
+
+          result.textContent =
+            "✅ SUCCESS!\n\n" +
+            "Status: " +
+            response.status +
+            "\n" +
+            "Count: " +
+            data.length +
+            " zones\n\n" +
+            "Full Response:\n" +
+            JSON.stringify(data, null, 2);
+        } catch (error) {
+          result.textContent = "❌ ERROR!\n\n" + error.message;
+        }
+      }
+
+      // Auto-test on load
+      window.addEventListener("DOMContentLoaded", function () {
+        console.log("Debug page loaded. Click buttons to test APIs.");
+      });
+    </script>
+  </body>
+</html>
